@@ -12,7 +12,7 @@ import java.util.List;
  * @author Mohd Nadeem
  */
 @Data
-public class VirtualNumberRequest {
+public class AddVirtualNumbersRequest {
 
     @JsonProperty("virtual_numbers")
     private List<String> virtualNumbers;

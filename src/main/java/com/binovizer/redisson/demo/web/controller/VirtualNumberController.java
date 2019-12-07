@@ -1,13 +1,17 @@
 package com.binovizer.redisson.demo.web.controller;
 
 import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberRedisEntity;
-import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberType;
-import com.binovizer.redisson.demo.dto.request.VirtualNumberRequest;
+import com.binovizer.redisson.demo.dto.request.AddVirtualNumbersRequest;
+import com.binovizer.redisson.demo.dto.request.VirtualNumberAllocationRequest;
+import com.binovizer.redisson.demo.dto.request.VirtualNumberDeallocationRequest;
 import com.binovizer.redisson.demo.dto.response.VirtualNumberResponse;
-import com.binovizer.redisson.demo.service.VirtualNumberService;
+import com.binovizer.redisson.demo.service.VirtualNumberPoolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * The type VirtualNumberController
@@ -15,23 +19,27 @@ import org.springframework.web.bind.annotation.*;
  * @author Mohd Nadeem
  */
 @RestController
-@RequestMapping("/v1/number")
+@RequestMapping("/v1/number/")
 public class VirtualNumberController {
 
     @Autowired
-    private VirtualNumberService virtualNumberService;
+    private VirtualNumberPoolService virtualNumberPoolService;
 
     @PostMapping
-    public ResponseEntity<?> createVirtualNumber(@RequestBody VirtualNumberRequest virtualNumberRequest){
-        VirtualNumberResponse savedNumber = virtualNumberService.save(virtualNumberRequest);
+    public ResponseEntity<?> addVirtualNumbers(@RequestBody AddVirtualNumbersRequest addVirtualNumbersRequest){
+        VirtualNumberResponse savedNumber = virtualNumberPoolService.saveVirtualNumbers(addVirtualNumbersRequest);
         return ResponseEntity.ok(savedNumber);
     }
 
-    @GetMapping
-    public ResponseEntity<?> findVirtualNumber(@RequestParam("region_id") Long regionId,
-                                               @RequestParam("type") String type){
-        VirtualNumberType virtualNumberType = VirtualNumberType.fromName(type);
-        VirtualNumberRedisEntity found = virtualNumberService.find(regionId, virtualNumberType);
+    @PostMapping("allocate")
+    public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberAllocationRequest allocationRequest){
+        VirtualNumberRedisEntity found = virtualNumberPoolService.allocate(allocationRequest);
+        return ResponseEntity.ok(found);
+    }
+
+    @PostMapping("deallocate")
+    public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberDeallocationRequest deallocationRequest){
+        VirtualNumberRedisEntity found = virtualNumberPoolService.deallocate(deallocationRequest);
         return ResponseEntity.ok(found);
     }
 

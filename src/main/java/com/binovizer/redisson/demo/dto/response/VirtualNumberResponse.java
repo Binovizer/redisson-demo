@@ -1,6 +1,6 @@
 package com.binovizer.redisson.demo.dto.response;
 
-import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberType;
+import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberRedisEntity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,21 +21,11 @@ import java.util.List;
 public class VirtualNumberResponse {
 
     @JsonProperty("virtual_numbers")
-    private List<String> virtualNumbers;
+    private List<VirtualNumberRedisEntity> virtualNumbers;
 
-    @JsonProperty("region_id")
-    private Long regionId;
-
-    private VirtualNumberType type;
-
-    @JsonProperty("phone_number")
-    private String phoneNumber;
-
-    public static VirtualNumberResponse from(List<String> virtualNumbers, VirtualNumberType type, Long regionId){
+    public static VirtualNumberResponse from(List<VirtualNumberRedisEntity> virtualNumbers){
         return VirtualNumberResponse.builder()
-                .regionId(regionId)
                 .virtualNumbers(virtualNumbers)
-                .type(type)
                 .build();
     }
 

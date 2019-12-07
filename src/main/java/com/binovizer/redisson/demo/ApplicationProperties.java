@@ -34,10 +34,4 @@ public class ApplicationProperties {
     @Value("${redis.connection.pool.max.wait.ms}")
     private Integer maxWaitMillis;
 
-    @Value("${redis.virtual.number.free.pool.hash.key}")
-    private String freePoolCache;
-
-    @Value("${redis.virtual.number.occupied.pool.hash.key}")
-    private String occupiedPoolCache;
-
 }

@@ -1,22 +1,20 @@
-package com.binovizer.redisson.demo.db.redis.repo;
+package com.binovizer.redisson.demo.service;
 
 import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberRedisEntity;
 import com.binovizer.redisson.demo.db.redis.entity.VirtualNumberType;
+import com.binovizer.redisson.demo.dto.response.VirtualNumberResponse;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * The type VirtualNumberRepo
+ * The type VirtualNumberService
  *
  * @author Mohd Nadeem
  */
-public interface VirtualNumberRepo {
+public interface UnallocatedPoolService {
 
-    void save(Long regionId, VirtualNumberType virtualNumberType, List<VirtualNumberRedisEntity> toBeSaved);
+    VirtualNumberResponse save(Long regionId, VirtualNumberType type, List<VirtualNumberRedisEntity> entities);
 
     List<VirtualNumberRedisEntity> find(Long regionId, VirtualNumberType virtualNumberType);
-
-    List<VirtualNumberRedisEntity> find(String key);
 
 }
