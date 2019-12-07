@@ -42,8 +42,6 @@ public class RedissonConfiguration {
     @Bean
     public CacheManager cacheManager(RedissonClient redissonClient) {
         Map<String, CacheConfig> config = new HashMap<>();
-        config.put(applicationProperties.getUnallocatedPoolCacheHashKey(), new CacheConfig());
-        config.put(applicationProperties.getAllocatedPoolCacheHashKey(), new CacheConfig());
         return new RedissonSpringCacheManager(redissonClient, config);
     }
 }

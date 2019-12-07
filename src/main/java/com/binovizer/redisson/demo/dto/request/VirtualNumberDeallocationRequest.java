@@ -26,7 +26,7 @@ public class VirtualNumberDeallocationRequest {
     @JsonProperty("type")
     private VirtualNumberType virtualNumberType;
 
-    @JsonProperty("virtual_number_region_id")
+    @JsonProperty("region_id")
     private Long virtualNumberRegionId;
 
 }

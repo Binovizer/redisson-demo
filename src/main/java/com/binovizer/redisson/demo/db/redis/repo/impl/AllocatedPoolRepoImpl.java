@@ -9,6 +9,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -45,7 +46,9 @@ public class AllocatedPoolRepoImpl implements AllocatedPoolRepo {
         RMap<String, String> map = redissonClient.getMap(allocatedPoolCacheHashKey);
         try {
             String entityString = map.get(key);
-            redisEntity = StringSerializer.deserialize(entityString, VirtualNumberRedisEntity.class);
+            if(!StringUtils.isEmpty(entityString)){
+                redisEntity = StringSerializer.deserialize(entityString, VirtualNumberRedisEntity.class);
+            }
         } catch (IOException e) {
             log.error("Unable to serialize entity.");
         }

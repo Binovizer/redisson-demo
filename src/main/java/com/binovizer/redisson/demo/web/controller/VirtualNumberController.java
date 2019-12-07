@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Mohd Nadeem
  */
 @RestController
-@RequestMapping("/v1/number/")
+@RequestMapping("/v1/number")
 public class VirtualNumberController {
 
     @Autowired
@@ -31,13 +31,13 @@ public class VirtualNumberController {
         return ResponseEntity.ok(savedNumber);
     }
 
-    @PostMapping("allocate")
+    @PostMapping("/allocate")
     public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberAllocationRequest allocationRequest){
         VirtualNumberRedisEntity found = virtualNumberPoolService.allocate(allocationRequest);
         return ResponseEntity.ok(found);
     }
 
-    @PostMapping("deallocate")
+    @PostMapping("/deallocate")
     public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberDeallocationRequest deallocationRequest){
         VirtualNumberRedisEntity found = virtualNumberPoolService.deallocate(deallocationRequest);
         return ResponseEntity.ok(found);

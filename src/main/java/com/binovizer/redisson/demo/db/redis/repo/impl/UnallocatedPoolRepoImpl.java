@@ -50,10 +50,8 @@ public class UnallocatedPoolRepoImpl implements UnallocatedPoolRepo {
     @Override
     public void save(String key, List<VirtualNumberRedisEntity> toBeSaved) {
         RMap<String, String> map = redissonClient.getMap(unallocatedPoolCacheHashKey);
-        List<VirtualNumberRedisEntity> entities = find(key);
-        entities.addAll(toBeSaved);
         try {
-            map.fastPut(key, StringSerializer.serialize(entities));
+            map.fastPut(key, StringSerializer.serialize(toBeSaved));
         } catch (IOException e) {
             log.error("Unable to serialize entity.", e);
         }
