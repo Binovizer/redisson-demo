@@ -11,6 +11,8 @@ import com.binovizer.redisson.demo.exception.PoolException;
 import com.binovizer.redisson.demo.service.AllocatedPoolService;
 import com.binovizer.redisson.demo.service.UnallocatedPoolService;
 import com.binovizer.redisson.demo.service.VirtualNumberPoolService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -26,6 +28,11 @@ import java.util.stream.Collectors;
  */
 @Service
 public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
+
+    private static final String REDIS_LOCK = "redis_lock";
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Autowired
     private AllocatedPoolService allocatedPoolService;
@@ -59,8 +66,12 @@ public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
         VirtualNumberRedisEntity toBeAllocated = redisEntities.remove(0);
         toBeAllocated.setPhoneNumber(phoneNumber);
 
+        RLock rLock = redissonClient.getLock(REDIS_LOCK);
+        rLock.lock();
         unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, redisEntities);
         allocatedPoolService.save(phoneNumber, toBeAllocated);
+        rLock.unlock();
+
         return toBeAllocated;
     }
 
@@ -79,8 +90,11 @@ public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
                 unallocatedPoolService.find(virtualNumberRegionId, virtualNumberType);
         entities.add(toBeDeleted);
 
+        RLock rLock = redissonClient.getLock(REDIS_LOCK);
+        rLock.lock();
         allocatedPoolService.remove(phoneNumber);
         unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, entities);
+        rLock.unlock();
 
         return toBeDeleted;
     }

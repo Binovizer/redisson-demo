@@ -32,15 +32,15 @@ public class VirtualNumberController {
     }
 
     @PostMapping("/allocate")
-    public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberAllocationRequest allocationRequest){
-        VirtualNumberRedisEntity found = virtualNumberPoolService.allocate(allocationRequest);
-        return ResponseEntity.ok(found);
+    public ResponseEntity<?> allocateVirtualNumber(@RequestBody VirtualNumberAllocationRequest allocationRequest){
+        VirtualNumberRedisEntity allocated = virtualNumberPoolService.allocate(allocationRequest);
+        return ResponseEntity.ok(allocated);
     }
 
     @PostMapping("/deallocate")
-    public ResponseEntity<?> findVirtualNumber(@RequestBody VirtualNumberDeallocationRequest deallocationRequest){
-        VirtualNumberRedisEntity found = virtualNumberPoolService.deallocate(deallocationRequest);
-        return ResponseEntity.ok(found);
+    public ResponseEntity<?> deallocateVirtualNumber(@RequestBody VirtualNumberDeallocationRequest deallocationRequest){
+        VirtualNumberRedisEntity deallocated = virtualNumberPoolService.deallocate(deallocationRequest);
+        return ResponseEntity.ok(deallocated);
     }
 
 }
