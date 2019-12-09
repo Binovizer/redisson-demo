@@ -34,7 +34,6 @@ public class AllocatedPoolServiceImpl implements AllocatedPoolService {
 
     @Override
     public VirtualNumberRedisEntity save(String phoneNumber, VirtualNumberRedisEntity toBeAllocated) {
-        int i = 1/0;
         return allocatedPoolRepo.save(phoneNumber, toBeAllocated);
     }
 
