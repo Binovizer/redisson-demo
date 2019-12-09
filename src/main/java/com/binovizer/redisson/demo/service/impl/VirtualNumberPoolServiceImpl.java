@@ -11,6 +11,7 @@ import com.binovizer.redisson.demo.exception.PoolException;
 import com.binovizer.redisson.demo.service.AllocatedPoolService;
 import com.binovizer.redisson.demo.service.UnallocatedPoolService;
 import com.binovizer.redisson.demo.service.VirtualNumberPoolService;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
  * @author Mohd Nadeem
  */
 @Service
+@Slf4j
 public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
 
     private static final String REDIS_LOCK = "redis_lock";
@@ -58,20 +61,29 @@ public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
 
         validateIfAlreadyAllocated(phoneNumber);
 
-        List<VirtualNumberRedisEntity> redisEntities =
-                unallocatedPoolService.find(virtualNumberRegionId, virtualNumberType);
-        if(CollectionUtils.isEmpty(redisEntities)){
-            throw new PoolException(ErrorCodes.POOL_EXHAUSTED);
+        VirtualNumberRedisEntity toBeAllocated = null;
+        RLock rLock = redissonClient.getFairLock(REDIS_LOCK);
+        try {
+            boolean locked = rLock.tryLock(100, 10, TimeUnit.SECONDS);
+            if(locked) {
+                log.info("Redis is locked.");
+                List<VirtualNumberRedisEntity> redisEntities =
+                        unallocatedPoolService.find(virtualNumberRegionId, virtualNumberType);
+                if(CollectionUtils.isEmpty(redisEntities)){
+                    throw new PoolException(ErrorCodes.POOL_EXHAUSTED);
+                }
+                toBeAllocated = redisEntities.remove(0);
+                toBeAllocated.setPhoneNumber(phoneNumber);
+                unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, redisEntities);
+                allocatedPoolService.save(phoneNumber, toBeAllocated);
+            }
+        } catch (InterruptedException e) {
+            log.error("Unable to take lock on redis.", e);
+            throw new PoolException(ErrorCodes.REDIS_LOCKING_FAILED);
+        } finally {
+            log.info("Releasing lock on redis.");
+            rLock.unlock();
         }
-        VirtualNumberRedisEntity toBeAllocated = redisEntities.remove(0);
-        toBeAllocated.setPhoneNumber(phoneNumber);
-
-        RLock rLock = redissonClient.getLock(REDIS_LOCK);
-        rLock.lock();
-        unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, redisEntities);
-        allocatedPoolService.save(phoneNumber, toBeAllocated);
-        rLock.unlock();
-
         return toBeAllocated;
     }
 
@@ -81,21 +93,29 @@ public class VirtualNumberPoolServiceImpl implements VirtualNumberPoolService {
         Long virtualNumberRegionId = deallocationRequest.getVirtualNumberRegionId();
         VirtualNumberType virtualNumberType = deallocationRequest.getVirtualNumberType();
 
-        Optional<VirtualNumberRedisEntity> entityMaybe = allocatedPoolService.find(phoneNumber);
-        VirtualNumberRedisEntity toBeDeleted =
-                entityMaybe.orElseThrow(() -> new PoolException(ErrorCodes.VIRTUAL_NUMBER_NOT_FOUND));
-        toBeDeleted.setPhoneNumber(null);
-
-        List<VirtualNumberRedisEntity> entities =
-                unallocatedPoolService.find(virtualNumberRegionId, virtualNumberType);
-        entities.add(toBeDeleted);
-
-        RLock rLock = redissonClient.getLock(REDIS_LOCK);
-        rLock.lock();
-        allocatedPoolService.remove(phoneNumber);
-        unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, entities);
-        rLock.unlock();
-
+        VirtualNumberRedisEntity toBeDeleted = null;
+        RLock rLock = redissonClient.getFairLock(REDIS_LOCK);
+        try {
+            boolean locked = rLock.tryLock(100, 10, TimeUnit.SECONDS);
+            if(locked){
+                log.info("Redis is locked.");
+                Optional<VirtualNumberRedisEntity> entityMaybe = allocatedPoolService.find(phoneNumber);
+                toBeDeleted =
+                        entityMaybe.orElseThrow(() -> new PoolException(ErrorCodes.VIRTUAL_NUMBER_NOT_FOUND));
+                toBeDeleted.setPhoneNumber(null);
+                List<VirtualNumberRedisEntity> entities =
+                        unallocatedPoolService.find(virtualNumberRegionId, virtualNumberType);
+                entities.add(toBeDeleted);
+                allocatedPoolService.remove(phoneNumber);
+                unallocatedPoolService.save(virtualNumberRegionId, virtualNumberType, entities);
+            }
+        } catch (InterruptedException e) {
+            log.error("Unable to take lock on redis.", e);
+            throw new PoolException(ErrorCodes.REDIS_LOCKING_FAILED);
+        } finally {
+            log.info("Releasing lock on redis.");
+            rLock.unlock();
+        }
         return toBeDeleted;
     }
 
